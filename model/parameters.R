@@ -1,177 +1,47 @@
 library(tidyverse)
-library(mclust)
-library(flexclust)
-library(mvtnorm)
+source("estimation.R")
 
-set.seed(123)
-
-################ Model
-
-simulate_model <- function(params, n) {
-  with(params, sapply(1:n, function(rep) {
-    switch(EXPR=sample(1:3, size = 1, prob = p),
-      rmvnorm(1, mean = mu[, 1], sigma = sigma[, , 1]),
-      rmvnorm(1, mean = mu[, 2], sigma = sigma[, , 2]),
-      rmvnorm(1, mean = mu[, 3], sigma = sigma[, , 3])
+compute_params_model_list <- function(params, n_clusters) {
+  cov_format <- function(params, n_clusters) {
+    p_list <- with(params, 
+		   setNames(as.list(p[1:n_clusters]), paste0("p", 1:n_clusters))
     )
-  }))
+    
+    mu_list <- with(params, as.list(as.vector(mu)))
+    names(mu_list) <- sapply(1:n_clusters, 
+			     function(i) c(paste0("muX", i), paste0("muY", i))) %>%
+	    as.list %>% unlist
+
+
+    sigma_list <- list()
+    for (i in 1:n_clusters) {
+      sigma_list[[paste0("sigmaX", i)]] <- sqrt(params$sigma[1, 1, i])
+      sigma_list[[paste0("sigmaY", i)]] <- sqrt(params$sigma[2, 2, i])
+      sigma_list[[paste0("cov", i)]] <- params$sigma[1, 2, i]
+    }
+    
+    c(p_list, mu_list, sigma_list, list(loglik = params$loglik))
+  }
+
+  pearson_format <- function(params, n_clusters) {
+    rho_list <- list()
+    for (i in 1:n_clusters) {
+      rho_list[[paste0("rho", i)]] <- params[[paste0("cov", i)]] / (params[[paste0("sigmaX", i)]] * params[[paste0("sigmaY", i)]])
+    }
+    rho_list
+  }
+
+  delete_cov <- function(params, n_clusters) {
+    params[!names(params) %in% paste0("cov", 1:n_clusters)]
+  }
+
+  pretty_format <- function(cov_params, n_clusters) {
+    c(delete_cov(cov_params, n_clusters), pearson_format(cov_params, n_clusters))
+  }
+
+  cov_params <- cov_format(params, n_clusters)
+  pretty_format(cov_params, n_clusters)
 }
-
-predict_model <- function(params, x) {
-  pretty_params_cov <- function(params) {
-    with(
-      params,
-      list(
-        p = p,
-        mean_x = mu[1, ],
-        sd_x = sqrt(sigma[1, 1, 1:3]),
-        mean_y = mu[2, ],
-        sd_y = sqrt(sigma[2, 2, 1:3]),
-        cov_xy = sigma[1, 2, 1:3]
-      )
-    )
-  }
-
-  pretty_params_without_d <- function(params) {
-    with(
-      pretty_params_cov(params),
-      list(
-        p = p,
-        mean_x = mean_x,
-        sd_x = sd_x,
-        mean_y = mean_y,
-        sd_y = sd_y,
-        rho_xy = cov_xy / (sd_x * sd_y),
-        d1 = p[1] * dnorm(x, mean = mean_x[1], sd = sd_x[1]),
-        d2 = p[2] * dnorm(x, mean = mean_x[2], sd = sd_x[2]),
-        d3 = p[3] * dnorm(x, mean = mean_x[3], sd = sd_x[3])
-      )
-    )
-  }
-
-  pretty_params_with_d <- function(params) {
-    with(pretty_params_without_d(params), list(
-      p = p,
-      mean_x = mean_x,
-      sd_x = sd_x,
-      mean_y = mean_y,
-      sd_y = sd_y,
-      rho_xy = rho_xy,
-      d1 = d1,
-      d2 = d2,
-      d3 = d3,
-      d = d1 + d2 + d3
-    ))
-  }
-
-
-  p_and_m <- function(params) {
-    with(pretty_params_with_d(params), {
-      list(
-        p1_cond = d1 / d,
-        p2_cond = d2 / d,
-        p3_cond = d3 / d,
-        m1_cond = mean_y[1] + rho_xy[1] * sd_y[1] * (x - mean_x[1]) / sd_x[1],
-        m2_cond = mean_y[2] + rho_xy[2] * sd_y[2] * (x - mean_x[2]) / sd_x[2],
-        m3_cond = mean_y[3] + rho_xy[3] * sd_y[3] * (x - mean_x[3]) / sd_x[3]
-      )
-    })
-  }
-
-  with(p_and_m(params),
-    p1_cond*m1_cond + p2_cond*m2_cond + p3_cond*m3_cond)
-}
-
-estimate_init_model <- function(data, n_clusters = 3) {
-  return(
-    with(
-      kmeans(
-        x = data, 
-	centers = kcca(data, k=n_clusters, family=kccaFamily("kmeans"))@centers, # k-means++
-	iter.max = 10, nstart = 1,
-        algorithm = "Hartigan-Wong", trace = FALSE
-      ),
-      list(
-        means = centers,
-        variances = lapply(1:n_clusters, function(i) cov(data[cluster == i, ]))
-      )
-    )
-  )
-}
-
-compute_params_model <- function(data, n_clusters = 3) {
-  with(
-    Mclust(data,
-      G = n_clusters,
-      modelNames = "VVV",
-      initialization = estimate_init_model(data, n_clusters)
-    ), with(
-      parameters,
-      list(
-        p = pro,
-        mu = mean,
-        sigma = variance$sigma,
-	loglik = loglik
-      )
-    )
-  )
-}
-
-
-
-compute_params_model_list <- function(data) {
-  cov_format <- function(params) {
-    with(
-      params,
-      list(
-        p1 = p[1],
-        p2 = p[2],
-        p3 = p[3],
-        muX1 = mu[1, 1],
-        muX2 = mu[1, 2],
-        muX3 = mu[1, 3],
-        muY1 = mu[2, 1],
-        muY2 = mu[2, 2],
-        muY3 = mu[2, 3],
-        sigmaX1 = sqrt(sigma[1, 1, 1]),
-        sigmaX2 = sqrt(sigma[1, 1, 2]),
-        sigmaX3 = sqrt(sigma[1, 1, 3]),
-        sigmaY1 = sqrt(sigma[2, 2, 1]),
-        sigmaY2 = sqrt(sigma[2, 2, 2]),
-        sigmaY3 = sqrt(sigma[2, 2, 3]),
-        cov1 = sigma[1, 2, 1],
-        cov2 = sigma[1, 2, 2],
-        cov3 = sigma[1, 2, 3],
-	loglik = loglik
-      )
-    )
-  }
-
-  pearson_format <- function(params) {
-    with(params, {
-      list(
-        rho1 = cov1 / (sigmaX1 * sigmaY1),
-        rho2 = cov2 / (sigmaX2 * sigmaY2),
-        rho3 = cov3 / (sigmaX3 * sigmaY3)
-      )
-    })
-  }
-
-  delete_cov <- function(params) {
-    params[c(-16, -17, -18)]
-  }
-
-  pretty_format <- function(cov_params) {
-    c(delete_cov(cov_params), pearson_format(cov_params))
-  }
-
-  data %>%
-    compute_params_model() %>%
-    cov_format() %>%
-    pretty_format()
-}
-
-
 
 ########### Table Parameters
 
@@ -205,8 +75,7 @@ filter_age_sex <- function(df, age_min0, sex_male) {
   }
 }
 
-
-create_table_age_sex <- function(df, age_min, sex_male, compute_params) {
+create_table_age_sex <- function(df, age_min, sex_male, compute_params, n_clusters) {
   c(
     list(
       age_min = age_min, age_max = age_min + 4,
@@ -221,28 +90,36 @@ create_table_age_sex <- function(df, age_min, sex_male, compute_params) {
     as.data.frame()
 }
 
-create_table_age <- function(df, age_min, compute_params) {
+create_table_age <- function(df, age_min, compute_params, n_clusters) {
   rbind(
-    create_table_age_sex(df, age_min, sex_male = TRUE, compute_params),
-    create_table_age_sex(df, age_min, sex_male = FALSE, compute_params)
+    create_table_age_sex(df, age_min, sex_male = TRUE, compute_params, n_clusters),
+    create_table_age_sex(df, age_min, sex_male = FALSE, compute_params, n_clusters)
   )
 }
 
-create_table <- function(df, compute_params) {
+create_table <- function(df, compute_params, n_clusters) {
   map_df(seq(0, 90, 5), function(age_min) {
-    create_table_age(df, age_min = age_min, compute_params)
+    create_table_age(df, age_min = age_min, compute_params, n_clusters)
   }) %>% mutate_at(vars(-sex), as.numeric) %>% mutate(sex = as.character(sex)) 
 }
 
-############## Start
 
 
-DATASETS <- "../../../datasets/ArsenicPM2.5-CRD"
+###################### Start
+
+
+# Example usage
+n_clusters <- 4
+
+
+DATASETS <- "../../../datasets/ArsenicPM2.5-CRD/tables"
 
 create_table(
 	df = read.csv(paste0(DATASETS, "/combined.csv")), 
-	compute_params = compute_params_model_list
+	compute_params = function(data) compute_params_model_list(compute_params_model(data, n_clusters), n_clusters),
+	n_clusters = n_clusters
 ) %>%
-	write.csv(paste0(DATASETS, "/parameters.csv"), row.names=FALSE)
+	write.csv(paste0(DATASETS, paste0("/parameters",n_clusters,".csv")), row.names=FALSE)
+
 
 

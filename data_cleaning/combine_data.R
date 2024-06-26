@@ -160,5 +160,5 @@ read_data(
   DIR_env = DATASETS,
   DIR_health = DATASETS
 ) %>%
-  write.csv(paste0(DATASETS, "/ArsenicPM2.5-CRD/combined.csv"), row.names = FALSE)
+  write.csv(paste0(DATASETS, "/ArsenicPM2.5-CRD/tables/combined.csv"), row.names = FALSE)
 
