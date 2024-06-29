@@ -12,7 +12,7 @@ density_model <- function(params, x) {
 }
 
 
-filter_age_sex <- function(age, male) {
+filter_age_sex <- function(df, age, male) {
 	if (male) {
 		df %>% 
 			filter(age_min == age) %>%
@@ -29,7 +29,7 @@ filter_age_sex <- function(age, male) {
 
 plot_CDF <- function(DATASETS, data, age, male, n_clusters, h_step, Y_min, Y_max) {
 	params <- compute_params_model(data, n_clusters)
-	CairoPNG(paste0(DATASETS,"/images/CDF/CDF","-", n_clusters,"-",age,"-",ifelse(male, "male", "female")))
+	CairoPNG(paste0(DATASETS,"/images/CDF_Y/CDF_Y","-", n_clusters,"-",age,"-",ifelse(male, "male", "female")))
 	print(
 	      plot(ecdf(data$Y), 
 		col="red", 
@@ -50,7 +50,7 @@ Y_max <- with(df, max(c(male_logit, female_logit)))
 
 lapply(seq(0,90,5), function(age) lapply(c(FALSE, TRUE), function(male) 
 	plot_CDF(DATASETS, 
-	 data = filter_age_sex(age = age, male=male),
+	 data = filter_age_sex(df = df, age = age, male=male),
 	 age = age,
 	 male = male,
 	 n_clusters = 4, 

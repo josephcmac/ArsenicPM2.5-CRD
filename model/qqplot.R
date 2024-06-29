@@ -19,7 +19,7 @@ simulate_model <- function(params, n) {
 
 
 
-filter_age_sex <- function(age, male) {
+filter_age_sex <- function(df, age, male) {
 	if (male) {
 		df %>% 
 			filter(age_min == age) %>%
@@ -49,7 +49,7 @@ DATASETS <- "../../../datasets/ArsenicPM2.5-CRD"
 
 df <- read.csv(paste0(DATASETS, "/tables/combined.csv"))
 
-data <- filter_age_sex(age=90, male=TRUE)
+data <- filter_age_sex(df = df, age=90, male=TRUE)
 
 n_clusters <- 4
 
