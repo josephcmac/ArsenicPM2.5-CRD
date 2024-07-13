@@ -31,7 +31,8 @@ compute_params_model <- function(data, n_clusters) {
         p = pro,
         mu = mean,
         sigma = variance$sigma,
-	loglik = loglik
+	loglik = loglik,
+	bic = bic
       )
     )
   )

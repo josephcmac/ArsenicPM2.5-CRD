@@ -1,5 +1,6 @@
 library(tidyverse)
 library(xtable)
+library(Cairo)
 
 set.seed(123)
 source("estimation.R")
@@ -114,9 +115,55 @@ rm(d_next)
 
 index <- sort(d$age_min, index.return=TRUE)
 
-table_latex <- xtable(d[index$ix,])
+d <- d[index$ix,]
+rm(index)
+
+table_latex <- xtable(d)
 print(table_latex, type = "latex", include.rownames = FALSE, booktabs = TRUE)
 
+
+
+
+# ---------------------
+d_long <- d %>%
+	filter(sex == "Homme") %>%
+	select(-sex, -age_max) %>%
+	reshape2::melt(id.vars = c("age_min"), variable.name = "k", value.name = "p_value")
+
+CairoPNG(paste0(DATASETS,"/images/Chi2/Chi2-male.png"))
+ggplot(d_long, aes(x = age_min, y = p_value, color = k)) +
+  geom_point() +
+  geom_line() +
+  scale_y_log10() +
+  labs(title = "P-valeurs par tranche d'âge (hommes)",
+       x = "Tranche d'Âge",
+       y = "p-valeur (Échelle log10)",
+       color = "k") +
+  geom_hline(yintercept = 0.05, linetype = "dashed") +
+  geom_hline(yintercept = 0.05/(18*2), linetype = "longdash") + # Bonferonni
+  theme_minimal()
+dev.off()
+
+# ---------------------
+
+d_long <- d %>%
+	filter(sex == "Femme") %>%
+	select(-sex, -age_max) %>%
+	reshape2::melt(id.vars = c("age_min"), variable.name = "k", value.name = "p_value")
+
+CairoPNG(paste0(DATASETS,"/images/Chi2/Chi2-female.png"))
+ggplot(d_long, aes(x = age_min, y = p_value, color = k)) +
+  geom_point() +
+  geom_line() +
+  scale_y_log10() +
+  labs(title = "P-valeurs par tranche d'âge (femmes)",
+       x = "Tranche d'Âge",
+       y = "p-valeur (Échelle log10)",
+       color = "k") +
+  geom_hline(yintercept = 0.05, linetype = "dashed") +
+  geom_hline(yintercept = 0.05/(18*2), linetype = "longdash") + # Bonferonni
+  theme_minimal()
+dev.off()
 
 
 
