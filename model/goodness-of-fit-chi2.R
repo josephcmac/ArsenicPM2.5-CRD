@@ -62,6 +62,7 @@ X2 <- sapply(2:25, function(n_clusters) {
    sum((Observed - Expected)**2/Expected)
 })
 
+
 data.frame(n_clusters=2:25, chi2=X2) %>%
 	ggplot(aes(n_clusters, chi2)) +
 	geom_point() +
