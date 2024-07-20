@@ -124,7 +124,7 @@ filenames <- c("IHME-GBD_2019_DATA-5fcc42dd-1", "IHME-GBD_2019_DATA-28e7f8dc-1",
 
 CairoPNG(paste0(DATASETS, "/ArsenicPM2.5-CRD/images/descriptive_statistics/latency/LatencyArsenicHealthFemale.png"), width=1200, height=1000)
 plot(c(), 
-     xlim=c(0,10), ylim=c(-150, 0), 
+     xlim=c(1,10), ylim=c(-150, 0), 
      main="Série chronologique des p-valeurs pour l'hypothèse d'une 
      corrélation de Kendall non-nulle (Femmes)",
      xlab="Latence (Année)",
@@ -136,7 +136,7 @@ plot(c(),
 df_health <- read_files(filenames)
 
 for (age0 in 0:18) {
-  x <- 0:10
+  x <- 1:10
   y <- sapply(x, function(i) comp_p_Female(make_combination(df_env_yearly, 
           df_health %>% filter(age == age0) %>% select(-age), 
         i)))
@@ -150,7 +150,7 @@ dev.off()
 
 CairoPNG(paste0(DATASETS, "/ArsenicPM2.5-CRD/images/descriptive_statistics/latency/LatencyArsenicHealthMale.png"), width=1200, height=1000)
 plot(c(), 
-     xlim=c(0,10), ylim=c(-150, 0), 
+     xlim=c(1,10), ylim=c(-150, 0), 
      main="Série chronologique des p-valeurs pour l'hypothèse d'une 
      corrélation de Kendall non-nulle (Hommes)",
      xlab="Latence (Année)",
@@ -162,7 +162,7 @@ plot(c(),
 df_health <- read_files(filenames)
 
 for (age0 in 0:18) {
-  x <- 0:10
+  x <- 1:10
   y <- sapply(x, function(i) comp_p_Male(make_combination(df_env_yearly, 
           df_health %>% filter(age == age0) %>% select(-age), 
         i)))

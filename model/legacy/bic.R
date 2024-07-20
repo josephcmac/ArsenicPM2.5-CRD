@@ -12,17 +12,18 @@ custom_cdf <- function(params, x) {
   )
 }
 
-
-filter_age_sex <- function(df, age, male) {
-	if (male) {
-		df %>% 
-			filter(age_min == age, sex == "Homme") %>%
-			select(X, Y)
-	} else {
-		df %>% 
-			filter(age_min == age, sex == "Femme") %>%
-			select(X, Y)
-	}
+filter_age_sex <- function(df, male, age) {
+  if (male) {
+    df %>%
+      filter(age_min == age) %>%
+      select(ArsenicPM2.5LC_log, male_logit) %>%
+      rename(X = ArsenicPM2.5LC_log, Y = male_logit)
+  } else {
+    df %>%
+      filter(age_min == age) %>%
+      select(ArsenicPM2.5LC_log, female_logit) %>%
+      rename(X = ArsenicPM2.5LC_log, Y = female_logit)
+  }
 }
 
 create_table_sex_age <- function(df, male, age, n_clusters) {
@@ -84,11 +85,6 @@ d_next <- create_table(df, n_clusters=5) %>%
 	rename(bic5 = bic)
 
 d <- merge(d, d_next)
-
-d_next <- create_table(df, n_clusters=6) %>% 
-	rename(bic6 = bic)
-d <- merge(d, d_next)
-
 rm(d_next)
 
 index <- sort(d$age_min, index.return=TRUE)

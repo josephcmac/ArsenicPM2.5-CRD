@@ -15,48 +15,81 @@ density_model <- function(params, x) {
 filter_age_sex <- function(df, age, male) {
 	if (male) {
 		df %>% 
-			filter(age_min == age) %>%
-			select(ArsenicPM2.5LC_log, male_logit) %>%
-			rename(X = ArsenicPM2.5LC_log, Y = male_logit)
+			filter(age_min == age, sex == "Homme") %>%
+			select(X, Y)
 	} else {
 		df %>% 
-			filter(age_min == age) %>%
-			select(ArsenicPM2.5LC_log, female_logit) %>%
-			rename(X = ArsenicPM2.5LC_log, Y = female_logit)
+			filter(age_min == age, sex == "Femme") %>%
+			select(X, Y)
 	}
 }
 
 
-plot_CDF <- function(DATASETS, data, age, male, n_clusters, h_step, Y_min, Y_max) {
+
+plot_CDF <- function(DATASETS, data, age, male, n_clusters, h_step) {
 	params <- compute_params_model(data, n_clusters)
 	CairoPNG(paste0(DATASETS,"/images/CDF_X/CDF_X","-", n_clusters,"-",age,"-",ifelse(male, "male", "female")))
 	print(
 	      plot(ecdf(data$X), 
 		col="red", 
 		main = "Fonction de Répartition", 
-	 	xlab = "y", ylab = "P(Y < y)", 
-		sub=paste0("Tranche d'Àge : ",age, "-", age+4, "; Sexe : ", ifelse(male, "Homme", "Femme"))))
+	 	xlab = "x", ylab = "P(X < x)", lwd=8,
+		sub=paste0("Tranche d'Àge : ",age, "-", age+4, "; Sexe : ", ifelse(male, "Homme", "Femme"), "; Clusters : ", n_clusters)))
 
-	print(lines( seq(Y_min, Y_max, h_step), sapply(seq(Y_min, Y_max, h_step), function(x) density_model(params, x)), col="blue", type="l", lty=2, lwd=3))
+	X_min <- with(data, min(X))
+	X_max <- with(data, max(X))
+
+	print(lines( seq(X_min, X_max, h_step), sapply(seq(X_min, X_max, h_step), function(x) density_model(params, x)), col="blue", type="l", lty=2, lwd=3))
 	dev.off()
 }
 
 DATASETS <- "../../../datasets/ArsenicPM2.5-CRD"
 
 df <- read.csv(paste0(DATASETS, "/tables/combined.csv"))
-Y_min <- with(df, min(ArsenicPM2.5LC_log))
-Y_max <- with(df, max(ArsenicPM2.5LC_log))
 
-lapply(seq(0,90,5), function(age) lapply(c(FALSE, TRUE), function(male) 
-	plot_CDF(DATASETS, 
+age <- 90
+male <- FALSE
+
+plot_CDF(DATASETS, 
+	 data = filter_age_sex(df = df, age = age, male=male),
+	 age = age,
+	 male = male,
+	 n_clusters = 2, 
+	 h_step = 0.01
+	)
+
+plot_CDF(DATASETS, 
+	 data = filter_age_sex(df = df, age = age, male=male),
+	 age = age,
+	 male = male,
+	 n_clusters = 3, 
+	 h_step = 0.01
+	)
+
+plot_CDF(DATASETS, 
 	 data = filter_age_sex(df = df, age = age, male=male),
 	 age = age,
 	 male = male,
 	 n_clusters = 4, 
-	 h_step = 0.01,
-	 Y_min = Y_min,
-	 Y_max = Y_max
+	 h_step = 0.01
 	)
-))
+
+plot_CDF(DATASETS, 
+	 data = filter_age_sex(df = df, age = age, male=male),
+	 age = age,
+	 male = male,
+	 n_clusters = 5, 
+	 h_step = 0.01
+	)
+
+plot_CDF(DATASETS, 
+	 data = filter_age_sex(df = df, age = age, male=male),
+	 age = age,
+	 male = male,
+	 n_clusters = 6, 
+	 h_step = 0.01
+	)
+
+
 
 

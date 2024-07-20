@@ -2,7 +2,6 @@ library(flexclust)
 library(mclust)
 
 estimate_init_model <- function(data, n_clusters) {
-  set.seed(123)
   return(
     with(
       kmeans(
@@ -21,8 +20,7 @@ estimate_init_model <- function(data, n_clusters) {
 
 
 compute_params_model <- function(data, n_clusters) {
-  set.seed(123)
-   with(
+  with(
     Mclust(data,
       G = n_clusters,
       modelNames = "VVV",

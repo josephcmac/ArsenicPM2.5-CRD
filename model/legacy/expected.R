@@ -8,12 +8,14 @@ source("estimation.R")
 filter_age_sex <- function(df, age, male) {
 	if (male) {
 		df %>% 
-			filter(age_min == age, sex == "Homme") %>%
-			select(X, Y)
+			filter(age_min == age) %>%
+			select(ArsenicPM2.5LC_log, male_logit) %>%
+			rename(X = ArsenicPM2.5LC_log, Y = male_logit)
 	} else {
 		df %>% 
-			filter(age_min == age, sex == "Femme") %>%
-			select(X, Y)
+			filter(age_min == age) %>%
+			select(ArsenicPM2.5LC_log, female_logit) %>%
+			rename(X = ArsenicPM2.5LC_log, Y = female_logit)
 	}
 }
 
@@ -75,13 +77,10 @@ plot_expected <- function(DATASETS, data, age, male, n_clusters, Y_min, Y_max) {
 	kernel_regression <- with(data, kreg(X, Y, bandwidth=0.4, kernel="epanechnikov"))
 	esperance_cond <- with(kernel_regression, calc_esperance_cond(x, params, n_clusters))
 	
-	CairoPNG(paste0(DATASETS,"/images/expected/", ifelse(male, "male", "female"),"/expected_Y","-", n_clusters,"-",age,"-",ifelse(male, "male", "female")))
+	CairoPNG(paste0(DATASETS,"/images/expected/expected_Y","-", n_clusters,"-",age,"-",ifelse(male, "male", "female")))
 	with(data, plot(X, Y, type = "p", col = rgb(0,0,0,.1), pch=19, 
 	     main="Espérance conditionnelle de Y sachant X=x en fonction de x",
-	     sub=paste0("Tranche d'Àge : ",age, "-", age+4, "; Sexe : ", ifelse(male, "Homme", "Femme")),
-	     ylim=c(Y_min, Y_max)
-
-	)
+	     sub=paste0("Tranche d'Àge : ",age, "-", age+4, "; Sexe : ", ifelse(male, "Homme", "Femme")))
 	)
 	with(kernel_regression, lines(x, y, col = "blue", pch=19, lty="dashed", lwd=3))
 	with(kernel_regression, lines(x, esperance_cond, col = "red", pch=19, lty="solid", lwd=3))
@@ -95,18 +94,18 @@ DATASETS <- "../../../datasets/ArsenicPM2.5-CRD"
 
 df <- read.csv(paste0(DATASETS, "/tables/combined.csv"))
 
-Y_min <- with(df, min(Y) )
-Y_max <- with(df, max(Y) )
-
 sapply(seq(0,90,5), function(age) sapply(c(TRUE,FALSE), function(male)
 	plot_expected(DATASETS=DATASETS,
 	      data=filter_age_sex(df, age=age, male=male), 
 	      age=age, 
 	      male=male, 
-	      n_clusters=6, 
-	      Y_min = Y_min,
-	      Y_max = Y_max
+	      n_clusters=4, 
+	      Y_min = with(df, min(c(male_logit, female_logit))), 
+	      Y_max = with(df, max(c(male_logit, female_logit)))
 )
+
+
+
 					  ))
 
 
