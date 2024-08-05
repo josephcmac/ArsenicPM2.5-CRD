@@ -3,6 +3,8 @@ library(mvtnorm)
 library(Cairo)
 library(RColorBrewer)
 
+set.seed(42)
+
 source("estimation.R")
 
 filter_age_sex <- function(df, age, male) {
@@ -17,12 +19,7 @@ filter_age_sex <- function(df, age, male) {
 	}
 }
 
-DATASETS <- "../../../datasets/ArsenicPM2.5-CRD"
-
-df <- read.csv(paste0(DATASETS, "/tables/combined.csv"))
-
-produce_image <- function(n_clusters, age, male) {
-    data <- filter_age_sex(df, age = age, male = male)
+produce_image <- function(data, n_clusters, age, male) {
 
     X_min <- with(data, min(X))
     X_max <- with(data, max(X) + 0.01)
@@ -37,7 +34,8 @@ produce_image <- function(n_clusters, age, male) {
 
     Observed <- sapply(1:X_len, function(i) {
         sapply(1:Y_len, function(j) {
-            with(data, sum((X_bin[i] <= X) & (X < X_bin[i + 1]) & (Y_bin[j] <= Y) & (Y < Y_bin[j + 1])))
+            with(data, sum((X_bin[i] <= X) & (X < X_bin[i + 1]) & 
+                             (Y_bin[j] <= Y) & (Y < Y_bin[j + 1])))
         })
     })
 
@@ -47,8 +45,10 @@ produce_image <- function(n_clusters, age, male) {
             with(data, with(
                 params,
                 sapply(1:n_clusters, function(k) {
-                    (Y_bin[j + 1] - Y_bin[j]) * (X_bin[i + 1] - X_bin[i]) * p[k] * mvtnorm::dmvnorm(
-                        x = c(0.5 * (X_bin[i] + X_bin[i + 1]), 0.5 * (Y_bin[j] + Y_bin[j + 1])),
+                    (Y_bin[j + 1] - Y_bin[j]) * (X_bin[i + 1] - 
+                                          X_bin[i]) * p[k] * mvtnorm::dmvnorm(
+                        x = c(0.5 * (X_bin[i] + X_bin[i + 1]), 
+                              0.5 * (Y_bin[j] + Y_bin[j + 1])),
                         mean = mu[, k], sigma = sigma[, , k]
                     )
                 }) %>% sum()
@@ -56,7 +56,8 @@ produce_image <- function(n_clusters, age, male) {
         })
     })
 
-    plot_combined_matrices <- function(observed_matrix, expected_matrix, file_name, title1, title2, n_clusters) {
+    plot_combined_matrices <- function(observed_matrix, expected_matrix, 
+                                       file_name, title1, title2, n_clusters) {
         CairoPNG(file_name, width = 1400, height = 700)
         layout(matrix(1:2, nrow = 1, ncol = 2))
 
@@ -68,8 +69,10 @@ produce_image <- function(n_clusters, age, male) {
             main = title1
         )
         box()
-        axis(1, at = seq(0, 1, length.out = ncol(observed_matrix)), labels = FALSE)
-        axis(2, at = seq(0, 1, length.out = nrow(observed_matrix)), labels = FALSE)
+        axis(1, at = seq(0, 1, length.out = ncol(observed_matrix)), 
+             labels = FALSE)
+        axis(2, at = seq(0, 1, length.out = nrow(observed_matrix)), 
+             labels = FALSE)
 
         par(mar = c(5, 1, 4, 4) + 0.1)
         image(
@@ -79,21 +82,39 @@ produce_image <- function(n_clusters, age, male) {
             main = title2
         )
         box()
-        axis(1, at = seq(0, 1, length.out = ncol(expected_matrix)), labels = FALSE)
-        axis(2, at = seq(0, 1, length.out = nrow(expected_matrix)), labels = FALSE)
+        axis(1, at = seq(0, 1, length.out = ncol(expected_matrix)), 
+             labels = FALSE)
+        axis(2, at = seq(0, 1, length.out = nrow(expected_matrix)), 
+             labels = FALSE)
 
        dev.off()
     }
 
-    combined_file <- paste0(DATASETS, "/images/CDF_XY/", ifelse(male, "male", "female"),"/combined_CDF_XY-", n_clusters, "-", age, "-", ifelse(male, "male", "female"), ".png")
+    combined_file <- paste0(DATASETS, "/images/CDF_XY/", 
+                            ifelse(male, "male", "female"),"/combined_CDF_XY-", 
+                            age, "-", ifelse(male, "male", "female"), ".png")
 
-    plot_combined_matrices(Observed, Expected, combined_file, "Observed CDF XY", "Expected CDF XY", n_clusters)
+    plot_combined_matrices(Observed, Expected, combined_file, 
+                           "Observée", "Espérées", n_clusters)
 }
 
+DATASETS <- "../../../datasets/ArsenicPM2.5-CRD"
 
-for (n_clusters in 2:6) {
+df <- read.csv(paste0(DATASETS, "/tables/combined.csv"))
+
+dr <- readRDS(paste0(DATASETS, "/tables/clusters.rds"))
+
+
+for (age in seq(0, 90, 5)) {
 	for (male in c(TRUE, FALSE))
-  produce_image(n_clusters=n_clusters, age=90, male=male)
+  produce_image(data=filter_age_sex(df, age = age, male = male), 
+                n_clusters=dr %>% 
+                  filter(
+                    age_min == age, 
+                    sex == ifelse(male, "Homme", "Femme")
+                    ) %>% 
+                  getElement("clusters"), 
+                age=age, male=male)
 }
 
 

@@ -28,7 +28,7 @@ filter_age_sex <- function(df, age, male) {
 
 plot_CDF <- function(DATASETS, data, age, male, n_clusters, h_step) {
 	params <- compute_params_model(data, n_clusters)
-	CairoPNG(paste0(DATASETS,"/images/CDF_X/CDF_X","-", n_clusters,"-",age,"-",ifelse(male, "male", "female")))
+	CairoPNG(paste0(DATASETS,"/images/CDF_X/",ifelse(male, "male", "female"),"/CDF_X","-", n_clusters,"-",age,"-",ifelse(male, "male", "female")))
 	print(
 	      plot(ecdf(data$X), 
 		col="red", 
@@ -50,45 +50,17 @@ df <- read.csv(paste0(DATASETS, "/tables/combined.csv"))
 age <- 90
 male <- FALSE
 
-plot_CDF(DATASETS, 
-	 data = filter_age_sex(df = df, age = age, male=male),
-	 age = age,
-	 male = male,
-	 n_clusters = 2, 
-	 h_step = 0.01
-	)
-
-plot_CDF(DATASETS, 
-	 data = filter_age_sex(df = df, age = age, male=male),
-	 age = age,
-	 male = male,
-	 n_clusters = 3, 
-	 h_step = 0.01
-	)
-
-plot_CDF(DATASETS, 
-	 data = filter_age_sex(df = df, age = age, male=male),
-	 age = age,
-	 male = male,
-	 n_clusters = 4, 
-	 h_step = 0.01
-	)
-
-plot_CDF(DATASETS, 
-	 data = filter_age_sex(df = df, age = age, male=male),
-	 age = age,
-	 male = male,
-	 n_clusters = 5, 
-	 h_step = 0.01
-	)
-
-plot_CDF(DATASETS, 
-	 data = filter_age_sex(df = df, age = age, male=male),
-	 age = age,
-	 male = male,
-	 n_clusters = 6, 
-	 h_step = 0.01
-	)
+for (age in seq(0, 90, 5)) {
+  for (male in c(TRUE, FALSE)) {
+	plot_CDF(DATASETS, 
+		 data = filter_age_sex(df = df, age = age, male=male),
+		 age = age,
+		 male = male,
+		 n_clusters = 6, 
+		 h_step = 0.01
+		)
+  }
+}
 
 
 
