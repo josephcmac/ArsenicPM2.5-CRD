@@ -13,19 +13,6 @@ custom_cdf <- function(params, x) {
   )
 }
 
-
-filter_age_sex <- function(df, age, male) {
-	if (male) {
-		df %>% 
-			filter(age_min == age, sex == "Homme") %>%
-			select(X, Y)
-	} else {
-		df %>% 
-			filter(age_min == age, sex == "Femme") %>%
-			select(X, Y)
-	}
-}
-
 create_table_sex_age <- function(df, male, age, n_clusters) {
 	create_table_sex_age_data <- function(data, male, age, n_clusters) {
 		params <- compute_params_model(data, n_clusters)

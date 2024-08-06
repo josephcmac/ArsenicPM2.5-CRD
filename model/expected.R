@@ -6,19 +6,6 @@ set.seed(1729)
 
 source("estimation.R")
 
-filter_age_sex <- function(df, age, male) {
-	if (male) {
-		df %>% 
-			filter(age_min == age, sex == "Homme") %>%
-			select(X, Y)
-	} else {
-		df %>% 
-			filter(age_min == age, sex == "Femme") %>%
-			select(X, Y)
-	}
-}
-
-
 calc_esperance_cond <- function(X, params, n_clusters) {
 	pretty_params <- function(params, n_clusters) {
 		pretty_params_aux <- function(params, n_clusters) {
@@ -104,8 +91,8 @@ DATASETS <- "../../../datasets/ArsenicPM2.5-CRD"
 df <- read.csv(paste0(DATASETS, "/tables/combined.csv"))
 dr <- readRDS(paste0(DATASETS, "/tables/clusters.rds"))
 
-Y_min <- with(df, min(Y) )
-Y_max <- with(df, max(Y) )
+Y_min <- with(df, min(Y))
+Y_max <- with(df, max(Y))
 
 sapply(seq(0,90,5), function(age) sapply(c(TRUE,FALSE), function(male)
 	plot_expected(DATASETS=DATASETS,

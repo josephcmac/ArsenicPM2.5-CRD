@@ -41,3 +41,14 @@ compute_params_model <- function(data, n_clusters) {
 }
 
 
+filter_age_sex <- function(df, age, male) {
+  if (male) {
+    df %>% 
+      filter(age_min == age, sex == "Homme") %>%
+      select(X, Y)
+  } else {
+    df %>% 
+      filter(age_min == age, sex == "Femme") %>%
+      select(X, Y)
+  }
+}

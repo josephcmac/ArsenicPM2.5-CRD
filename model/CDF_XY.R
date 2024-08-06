@@ -7,18 +7,6 @@ set.seed(42)
 
 source("estimation.R")
 
-filter_age_sex <- function(df, age, male) {
-	if (male) {
-		df %>% 
-			filter(age_min == age, sex == "Homme") %>%
-			select(X, Y)
-	} else {
-		df %>% 
-			filter(age_min == age, sex == "Femme") %>%
-			select(X, Y)
-	}
-}
-
 produce_image <- function(data, n_clusters, age, male) {
 
     X_min <- with(data, min(X))
