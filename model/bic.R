@@ -119,9 +119,11 @@ dr <- d %>%
   mutate(clusters = as.integer(clusters)) %>%
   select(age_min, age_max, sex, clusters)
 
-dr %>% filter(sex=="Homme") %>% select(-sex) %>% xtable() %>% print(include.rownames=FALSE)
+dr %>% filter(sex=="Homme") %>% select(-sex) %>% xtable() %>% 
+  print(include.rownames=FALSE)
 
-dr %>% filter(sex=="Femme") %>% select(-sex) %>% xtable() %>% print(include.rownames=FALSE)
+dr %>% filter(sex=="Femme") %>% select(-sex) %>% xtable() %>% 
+  print(include.rownames=FALSE)
 
 saveRDS(dr, file=paste0(DATASETS, "/tables/clusters.rds"))
 
