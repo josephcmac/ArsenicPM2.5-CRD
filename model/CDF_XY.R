@@ -83,7 +83,7 @@ produce_image <- function(data, n_clusters, age, male) {
                             age, "-", ifelse(male, "male", "female"), ".png")
 
     plot_combined_matrices(Observed, Expected, combined_file, 
-                           "Observée", "Espérées", n_clusters)
+                           "Observées", "Espérées", n_clusters)
 }
 
 DATASETS <- "../../../datasets/ArsenicPM2.5-CRD"
