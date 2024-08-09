@@ -6,6 +6,11 @@ set.seed(1729)
 
 source("estimation.R")
 
+expint <- function(y) {
+  v <- exp(y)
+  100000*v/(v+1)
+}
+
 calc_esperance_cond <- function(X, params, n_clusters) {
 	pretty_params <- function(params, n_clusters) {
 		pretty_params_aux <- function(params, n_clusters) {
@@ -67,17 +72,23 @@ plot_expected <- function(DATASETS, data, age, male, n_clusters, Y_min, Y_max) {
 	esperance_cond <- with(kernel_regression, 
 	                       calc_esperance_cond(x, params, n_clusters))
 	
-	CairoPNG(paste0(DATASETS,"/images/expected/", 
+	CairoPNG(paste0(DATASETS,"/images/expected_real/", 
 	                ifelse(male, "male", "female"),"/expected_Y-",age,"-",
 	                ifelse(male, "male", "female"),".png"))
-	with(data, plot(X, Y, type = "p", col = rgb(0,0,0,.1), pch=19, 
-	     main="Espérance conditionnelle de Y sachant X=x en fonction de x",
-	     sub=paste0("Tranche d'Àge : ",age, "-", 
-	                age+4, "; Sexe : ", ifelse(male, "Homme", "Femme")),
-	     ylim=c(Y_min, Y_max)
-
-	)
-	)
+	with(data, {# First, plot with default settings
+	  plot(X, Y, type = "p", col = rgb(0,0,0,.1), pch=19, 
+	       main="Espérance conditionnelle de Y sachant X=x en fonction de x",
+	       sub=paste0("Tranche d'Àge : ",age, "-", 
+	                  age+4, "; Sexe : ", ifelse(male, "Homme", "Femme")),
+	       ylim=c(Y_min, Y_max), xaxt = "n", yaxt = "n",
+	       xlab = "Arsenic PM2.5 (microgrammes/mètre cube (LC))",
+	       ylab = "Taux d'Incidence (nouvaux cas pour 100 000 personnes)"
+	  )
+	  
+	  axis(1, at = axTicks(1), labels = exp(axTicks(1)) %>% round(4))
+	  axis(2, at = axTicks(2), labels = expint(axTicks(2)) %>% round(0))
+	  
+	})
 	with(kernel_regression, 
 	     lines(x, y, col = "blue", pch=19, lty="dashed", lwd=3))
 	with(kernel_regression, 
